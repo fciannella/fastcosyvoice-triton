@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  triton:
+    build:
+      context: ..
+      dockerfile: triton_server/Dockerfile
+    image: fastcosyvoice-triton:24.07
+    container_name: fastcosyvoice-triton
+    ports:
+      - "8000:8000"   # HTTP
+      - "8001:8001"   # gRPC
+      - "8002:8002"   # Metrics
+    env_file:
+      - .env
+    environment:
+      - MONGO_URI=${MONGO_URI}
+      - MONGO_DB=${MONGO_DB}
+      - MONGO_COLLECTION=${MONGO_COLLECTION}
+      - COSYVOICE_MODEL_DIR=${COSYVOICE_MODEL_DIR:-/models/Fun-CosyVoice3-0.5B}
+    volumes:
+      # Mount model directory if using pre-downloaded models
+      # - /path/to/local/models:/models
+      # Mount the Triton model repository
+      - ./models:/triton_models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s  # Give time for model loading
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+# Optional: Add Pipecat and Frontend services later
+# See full docker-compose.yml in project root

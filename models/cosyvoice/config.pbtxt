@@ -1,0 +1,108 @@
+# CosyVoice TTS Model Configuration for Triton
+# Python Backend with voice caching support
+
+name: "cosyvoice"
+backend: "python"
+
+# Allow multiple instances for better throughput
+instance_group [
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+# Model parameters
+parameters [
+  {
+    key: "MONGO_URI"
+    value: { string_value: "${MONGO_URI}" }
+  },
+  {
+    key: "MONGO_DB"
+    value: { string_value: "${MONGO_DB}" }
+  },
+  {
+    key: "MONGO_COLLECTION"
+    value: { string_value: "${MONGO_COLLECTION}" }
+  },
+  {
+    key: "COSYVOICE_MODEL_DIR"
+    value: { string_value: "${COSYVOICE_MODEL_DIR}" }
+  }
+]
+
+# Input tensors
+input [
+  {
+    name: "operation"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    # Operations: "tts_cached", "tts_custom", "cache_voice", "evict_voice", "list_voices"
+  },
+  {
+    name: "voice_id"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  },
+  {
+    name: "text"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  },
+  {
+    name: "instruction"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  },
+  {
+    name: "audio_base64"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  },
+  {
+    name: "transcription"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  }
+]
+
+# Output tensors
+output [
+  {
+    name: "audio"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+    # Raw PCM audio samples (16-bit converted to float)
+  },
+  {
+    name: "sample_rate"
+    data_type: TYPE_INT32
+    dims: [ 1 ]
+  },
+  {
+    name: "status"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "voice_ids"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    # For list_voices operation (may be empty for other operations)
+  }
+]
+
+# Enable response streaming for TTS
+model_transaction_policy {
+  decoupled: true
+}
+
+# Dynamic batching disabled for streaming TTS
+# max_batch_size: 0
