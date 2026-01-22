@@ -38,7 +38,7 @@ Triton Inference Server deployment for FastCosyVoice TTS with voice caching.
 cd FastCosyVoice
 
 # Build the image (from project root)
-docker build -f triton_server/Dockerfile -t fastcosyvoice-triton:24.07 .
+docker build -t fastcosyvoice-triton:24.07 .
 
 # Copy and configure environment variables
 cp .env.example .env

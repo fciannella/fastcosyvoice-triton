@@ -3,8 +3,8 @@ version: '3.8'
 services:
   triton:
     build:
-      context: ..
-      dockerfile: triton_server/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     image: fastcosyvoice-triton:24.07
     container_name: fastcosyvoice-triton
     ports:

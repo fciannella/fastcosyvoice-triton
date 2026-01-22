@@ -26,20 +26,27 @@ RUN apt-get update -y && \
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
-# Set working directory for CosyVoice
-WORKDIR /workspace/FastCosyVoice
+# Set working directory
+WORKDIR /workspace
 
-# Copy the entire codebase (needed for uv sync to work with all dependencies)
-COPY . .
+# Copy the FastCosyVoice codebase (contains pyproject.toml)
+COPY FastCosyVoice /workspace/FastCosyVoice
+
+# Copy Triton model repository
+COPY models /triton_models
 
 # Set PYTHONPATH for CosyVoice modules
 ENV PYTHONPATH="${PYTHONPATH}:/workspace/FastCosyVoice"
 
 # Install all dependencies using uv sync (same as the main Dockerfile)
 # This ensures all deps including TensorRT, hyperpyyaml, etc are installed
+WORKDIR /workspace/FastCosyVoice
 RUN uv sync --no-dev
 
-# Create models directory
+# Install Triton-specific dependencies (not in FastCosyVoice requirements)
+RUN uv pip install pymongo
+
+# Create models directory for CosyVoice model weights
 RUN mkdir -p /models
 
 # Set model directory environment variable
@@ -49,9 +56,6 @@ ENV COSYVOICE_MODEL_DIR="/models/Fun-CosyVoice3-0.5B"
 RUN . .venv/bin/activate && python -c "\
 from huggingface_hub import snapshot_download; \
 snapshot_download('FunAudioLLM/Fun-CosyVoice3-0.5B-2512', local_dir='/models/Fun-CosyVoice3-0.5B')"
-
-# Copy Triton model repository to the expected location
-RUN cp -r triton_server/models /triton_models
 
 # Expose Triton ports
 EXPOSE 8000 8001 8002

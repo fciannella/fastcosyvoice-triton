@@ -338,28 +338,28 @@ class TritonPythonModel:
         # IMPORTANT: Use inference_mode() just like service.py does!
         # This affects model behavior and generation quality
         with torch.inference_mode():
-        for pcm_bytes in self.cosyvoice.inference_zero_shot_stream(
-            tts_text=text,
-            prompt_text=prompt_text,
+            for pcm_bytes in self.cosyvoice.inference_zero_shot_stream(
+                tts_text=text,
+                prompt_text=prompt_text,
                 prompt_wav=None,  # IMPORTANT: None for cached voices (matches service.py)
-            zero_shot_spk_id=spk_id,
-        ):
-            # Convert PCM bytes to float32 numpy array
-            audio_chunk = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-            
-            # Send intermediate response
-            audio_tensor = pb_utils.Tensor("audio", audio_chunk)
-            sample_rate_tensor = pb_utils.Tensor("sample_rate", np.array([self.sample_rate], dtype=np.int32))
-            status_tensor = pb_utils.Tensor("status", np.array(["streaming"], dtype=object))
-            voice_ids_tensor = pb_utils.Tensor("voice_ids", np.array([""], dtype=object))
-            
-            response = pb_utils.InferenceResponse(output_tensors=[
-                audio_tensor,
-                sample_rate_tensor,
-                status_tensor,
-                voice_ids_tensor,
-            ])
-            response_sender.send(response)
+                zero_shot_spk_id=spk_id,
+            ):
+                # Convert PCM bytes to float32 numpy array
+                audio_chunk = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+                
+                # Send intermediate response
+                audio_tensor = pb_utils.Tensor("audio", audio_chunk)
+                sample_rate_tensor = pb_utils.Tensor("sample_rate", np.array([self.sample_rate], dtype=np.int32))
+                status_tensor = pb_utils.Tensor("status", np.array(["streaming"], dtype=object))
+                voice_ids_tensor = pb_utils.Tensor("voice_ids", np.array([""], dtype=object))
+                
+                response = pb_utils.InferenceResponse(output_tensors=[
+                    audio_tensor,
+                    sample_rate_tensor,
+                    status_tensor,
+                    voice_ids_tensor,
+                ])
+                response_sender.send(response)
         
         # Send final "complete" response with EMPTY audio
         # (Don't send duplicate audio - streaming chunks already sent everything)
@@ -424,26 +424,26 @@ class TritonPythonModel:
             
             # Stream audio with inference_mode() (SAME as service.py!)
             with torch.inference_mode():
-            for pcm_bytes in self.cosyvoice.inference_zero_shot_stream(
-                tts_text=text,
-                prompt_text=prompt_text,
-                prompt_wav=temp_path,
-                zero_shot_spk_id=spk_id,
-            ):
-                audio_chunk = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
-                
-                audio_tensor = pb_utils.Tensor("audio", audio_chunk)
-                sample_rate_tensor = pb_utils.Tensor("sample_rate", np.array([self.sample_rate], dtype=np.int32))
-                status_tensor = pb_utils.Tensor("status", np.array(["streaming"], dtype=object))
-                voice_ids_tensor = pb_utils.Tensor("voice_ids", np.array([""], dtype=object))
-                
-                response = pb_utils.InferenceResponse(output_tensors=[
-                    audio_tensor,
-                    sample_rate_tensor,
-                    status_tensor,
-                    voice_ids_tensor,
-                ])
-                response_sender.send(response)
+                for pcm_bytes in self.cosyvoice.inference_zero_shot_stream(
+                    tts_text=text,
+                    prompt_text=prompt_text,
+                    prompt_wav=temp_path,
+                    zero_shot_spk_id=spk_id,
+                ):
+                    audio_chunk = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+                    
+                    audio_tensor = pb_utils.Tensor("audio", audio_chunk)
+                    sample_rate_tensor = pb_utils.Tensor("sample_rate", np.array([self.sample_rate], dtype=np.int32))
+                    status_tensor = pb_utils.Tensor("status", np.array(["streaming"], dtype=object))
+                    voice_ids_tensor = pb_utils.Tensor("voice_ids", np.array([""], dtype=object))
+                    
+                    response = pb_utils.InferenceResponse(output_tensors=[
+                        audio_tensor,
+                        sample_rate_tensor,
+                        status_tensor,
+                        voice_ids_tensor,
+                    ])
+                    response_sender.send(response)
             
             # Clean up temporary speaker (delete from spk2info directly)
             if spk_id in self.cosyvoice.frontend.spk2info:
